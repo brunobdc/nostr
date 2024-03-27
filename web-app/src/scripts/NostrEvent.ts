@@ -9,13 +9,13 @@ export interface NostrEventDto {
 }
 
 export default class NostrEvent {
-    id: string
-    pubkey: string
-    created_at: number
-    kind: number
-    tags: string[][]
-    content: string
-    sig: string
+    private readonly id: string
+    private readonly pubkey: string
+    private readonly created_at: number
+    private readonly kind: number
+    private readonly tags: string[][]
+    private readonly content: string
+    private readonly sig: string
 
     constructor(eventDto: NostrEventDto) {
         if (eventDto.id && eventDto.pubkey && eventDto.created_at && eventDto.sig) {

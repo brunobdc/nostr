@@ -2,7 +2,7 @@ import Filter from "./Filter";
 import NostrEvent from "./NostrEvent";
 
 interface RelayEventMap {
-    EVENT: CustomEvent<NostrEvent>
+    EVENT: CustomEvent<RelayResponseEvent>
     OK: CustomEvent<RelayResponseOk>
     EOSE: CustomEvent<RelayResponseEose>
     CLOSED: CustomEvent<RelayResponseClosed>
@@ -29,7 +29,7 @@ export default class Relay extends RelayEventTarget {
             const msg_array: Array<any> = JSON.parse(event.data)
             switch (msg_array[0]) {
                 case "EVENT":
-                    this.dispatchEvent(new CustomEvent("EVENT", { detail: new NostrEvent(msg_array[1]) }))
+                    this.dispatchEvent(new CustomEvent("EVENT", { detail: <RelayResponseEvent>{ subscription_id: msg_array[1], event: new NostrEvent(msg_array[2]) } }))
                     break;
                 case "OK":
                     this.dispatchEvent(new CustomEvent("OK", { detail: <RelayResponseOk>{ event_id: msg_array[1], success: msg_array[2], message: msg_array[3] } }))
@@ -58,6 +58,11 @@ export default class Relay extends RelayEventTarget {
     CloseSubscription(subscriptionID: string) {
         this.websocket.send(JSON.stringify(["CLOSE", subscriptionID]))
     }
+}
+
+export interface RelayResponseEvent {
+    subscription_id: string
+    event: NostrEvent
 }
 
 export interface RelayResponseOk {
