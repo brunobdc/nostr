@@ -12,7 +12,7 @@ import (
 var DB *mongo.Database
 
 func InitializeDB(ctx context.Context) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,0 +1,3 @@
+[submodule "relay/schnorr/secp256k1"]
+	path = relay/src/schnorr/secp256k1
+	url = git@github.com:bitcoin-core/secp256k1.git
