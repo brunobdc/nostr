@@ -32,3 +32,11 @@ func MakeOkResponse(eventID string, ok bool, msg string) ([]byte, error) {
 	buffer.WriteString("\"]")
 	return buffer.Bytes(), nil
 }
+
+func MakeEoseResponse(subscriptionID string) ([]byte, error) {
+	var buffer bytes.Buffer
+	buffer.WriteString("[\"EOSE\",\"")
+	buffer.WriteString(subscriptionID)
+	buffer.WriteString("\"]")
+	return buffer.Bytes(), nil
+}

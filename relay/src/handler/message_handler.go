@@ -69,6 +69,12 @@ func handleReq(ctx websocketcontext.WebsocketContext, eventRepository repository
 		ctx.SendMessage(response)
 	}
 
+	response, err := helpers.MakeEoseResponse(subscriptionID)
+	if err != nil {
+		log.Println(err)
+	}
+	ctx.SendMessage(response)
+
 	websocketSubscriptions.AddSubscription(subscriptionID, filters)
 }
 
