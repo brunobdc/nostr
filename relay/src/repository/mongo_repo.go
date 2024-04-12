@@ -18,27 +18,12 @@ func NewMongoEventsRepository() *MongoEventsRepository {
 	return &MongoEventsRepository{collection: infra.DB.Collection("Events")}
 }
 
-type MongoEventCursor struct {
-	cursor *mongo.Cursor
+func (repo *MongoEventsRepository) Save(ctx context.Context, event model.Event) error {
+	_, err := repo.collection.InsertOne(ctx, event)
+	return err
 }
 
-func (c *MongoEventCursor) Close(ctx context.Context) {
-	c.cursor.Close(ctx)
-}
-
-func (c *MongoEventCursor) Next(ctx context.Context) bool {
-	return c.cursor.Next(ctx)
-}
-
-func (c *MongoEventCursor) Decode(event *model.Event) error {
-	return c.cursor.Decode(event)
-}
-
-func (repo *MongoEventsRepository) Save(event model.Event) {
-	repo.collection.InsertOne(context.TODO(), event)
-}
-
-func (repo *MongoEventsRepository) SaveLatest(event model.Event) {
+func (repo *MongoEventsRepository) SaveLatest(ctx context.Context, event model.Event) error {
 	var eventFound model.Event
 	err := repo.collection.FindOne(
 		context.TODO(),
@@ -48,28 +33,30 @@ func (repo *MongoEventsRepository) SaveLatest(event model.Event) {
 		},
 	).Decode(&eventFound)
 	if err == mongo.ErrNoDocuments {
-		repo.collection.InsertOne(context.TODO(), event)
-		return
+		repo.collection.InsertOne(ctx, event)
+		return nil
 	}
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if eventFound.CreatedAt > event.CreatedAt {
-		return
+		return nil
 	}
-	repo.collection.InsertOne(context.TODO(), event)
-	repo.collection.DeleteOne(context.TODO(), bson.M{"_id": eventFound.ID})
+	repo.collection.InsertOne(ctx, event)
+	repo.collection.DeleteOne(ctx, bson.M{"_id": eventFound.ID})
+
+	return nil
 }
 
-func (repo *MongoEventsRepository) SaveParemeterizedLatest(event model.Event) {
+func (repo *MongoEventsRepository) SaveParemeterizedLatest(ctx context.Context, event model.Event) error {
 	var tagValue string
 	if tagValues, ok := event.Tags["d"]; ok {
 		tagValue = tagValues[0]
 	}
 	var eventFound model.Event
 	err := repo.collection.FindOne(
-		context.TODO(),
+		ctx,
 		bson.M{
 			"PublicKey": event.PublicKey,
 			"Kind":      event.Kind,
@@ -77,21 +64,23 @@ func (repo *MongoEventsRepository) SaveParemeterizedLatest(event model.Event) {
 		},
 	).Decode(&eventFound)
 	if err == mongo.ErrNoDocuments {
-		repo.collection.InsertOne(context.TODO(), event)
-		return
+		repo.collection.InsertOne(ctx, event)
+		return nil
 	}
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if eventFound.CreatedAt > event.CreatedAt {
-		return
+		return nil
 	}
-	repo.collection.InsertOne(context.TODO(), event)
-	repo.collection.DeleteOne(context.TODO(), bson.M{"_id": eventFound.ID})
+	repo.collection.InsertOne(ctx, event)
+	repo.collection.DeleteOne(ctx, bson.M{"_id": eventFound.ID})
+
+	return nil
 }
 
-func (repo *MongoEventsRepository) FindWithFilters(filters []*model.Filters) EventCursor {
+func (repo *MongoEventsRepository) FindWithFilters(ctx context.Context, filters []*model.Filters) (func(ctx context.Context) (bool, *model.Event), error) {
 	mongoFilters := []bson.M{}
 	for _, filter := range filters {
 		f := bson.M{}
@@ -116,15 +105,29 @@ func (repo *MongoEventsRepository) FindWithFilters(filters []*model.Filters) Eve
 		mongoFilters = append(mongoFilters, f)
 	}
 
-	opts := options.Find()
+	opts := options.Find().SetSort(bson.M{"CreatedAt": -1})
 	if len(filters) > 0 && filters[0].Limit > 0 {
 		opts = opts.SetLimit(int64(filters[0].Limit))
 	}
 
-	cursor, err := repo.collection.Find(context.TODO(), bson.M{"$or": mongoFilters}, opts)
+	cursor, err := repo.collection.Find(ctx, bson.M{"$or": mongoFilters}, opts)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return &MongoEventCursor{cursor: cursor}
+	cursosIsClosed := false
+
+	return func(ctx context.Context) (bool, *model.Event) {
+		if cursosIsClosed {
+			return false, nil
+		}
+		cursosIsClosed = cursor.Next(ctx)
+		if cursosIsClosed {
+			cursor.Close(ctx)
+			return false, nil
+		}
+		var event *model.Event
+		cursor.Decode(event)
+		return true, event
+	}, nil
 }

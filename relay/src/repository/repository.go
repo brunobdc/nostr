@@ -7,14 +7,8 @@ import (
 )
 
 type EventsRepository interface {
-	Save(event model.Event)
-	SaveLatest(event model.Event)
-	SaveParemeterizedLatest(event model.Event)
-	FindWithFilters(filters []*model.Filters) EventCursor
-}
-
-type EventCursor interface {
-	Close(ctx context.Context)
-	Next(ctx context.Context) bool
-	Decode(event *model.Event) error
+	Save(ctx context.Context, event model.Event) error
+	SaveLatest(ctx context.Context, event model.Event) error
+	SaveParemeterizedLatest(ctx context.Context, event model.Event) error
+	FindWithFilters(ctx context.Context, filters []*model.Filters) (func(ctx context.Context) (bool, *model.Event), error)
 }

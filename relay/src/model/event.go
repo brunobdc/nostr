@@ -29,15 +29,24 @@ type Event struct {
 
 func (e Event) IsValid() (bool, string) {
 	bytesID, err := hex.DecodeString(e.ID)
-	if err != nil || len(bytesID) != 32 {
+	if err != nil {
+		return false, "error: couldn't decode id hexadecimal"
+	}
+	if len(bytesID) != 32 {
 		return false, "invalid: id bytes size is differente from 32"
 	}
 	bytesPubKey, err := hex.DecodeString(e.PublicKey)
-	if err != nil || len(bytesPubKey) != 32 {
+	if err != nil {
+		return false, "error: couldn't decode pubKey hexadecimal"
+	}
+	if len(bytesPubKey) != 32 {
 		return false, "invalid: pubKey bytes size is differente from 32"
 	}
 	bytesSignature, err := hex.DecodeString(e.Signature)
-	if err != nil || len(bytesSignature) != 64 {
+	if err != nil {
+		return false, "error: couldn't decode signature hexadecimal"
+	}
+	if len(bytesSignature) != 64 {
 		return false, "invalid: signature bytes size is differente from 64"
 	}
 

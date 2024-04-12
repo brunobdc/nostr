@@ -13,7 +13,7 @@ func (tags Tags) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	for _, tagsSlice := range tagsMatrix {
-		if len(tagsSlice) > 0 {
+		if len(tagsSlice) >= 2 {
 			tags[tagsSlice[0]] = tagsSlice[1:]
 		}
 	}

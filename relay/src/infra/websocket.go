@@ -21,18 +21,23 @@ func UpgradeToWebsocket(w http.ResponseWriter, r *http.Request) (*Websocket, err
 	return &Websocket{conn: conn}, nil
 }
 
-func (ws *Websocket) WriteJson(data any) error {
+func (ws *Websocket) WriteMessage(typ int, msg []byte) error {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
-	return ws.conn.WriteJSON(data)
+	return ws.conn.WriteMessage(typ, msg)
 }
 
-func (ws *Websocket) WriteMessage(typ int, message []byte) error {
-	ws.mutex.Lock()
-	defer ws.mutex.Unlock()
-	return ws.conn.WriteMessage(typ, message)
-}
+func (ws *Websocket) ReadMessages(messageHandler func([]byte)) error {
+	for {
+		typ, msg, err := ws.conn.ReadMessage()
+		if err != nil {
+			return err
+		}
+		if typ == websocket.PingMessage {
+			ws.WriteMessage(websocket.PongMessage, nil)
+			continue
+		}
 
-func (ws *Websocket) ReadMessage() (int, []byte, error) {
-	return ws.conn.ReadMessage()
+		go messageHandler(msg)
+	}
 }

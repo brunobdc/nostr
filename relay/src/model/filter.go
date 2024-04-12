@@ -82,7 +82,7 @@ func (filter *Filters) UnmarshalJSON(b []byte) error {
 			}
 			filter.Limit = limit
 		default:
-			if len(key) > 1 && string(key[0]) == "#" {
+			if len(key) == 2 && string(key[0]) == "#" {
 				var tag_values []string
 				if err := json.Unmarshal(value, &tag_values); err != nil {
 					return err
