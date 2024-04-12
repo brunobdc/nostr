@@ -27,6 +27,10 @@ type Event struct {
 	Signature string    `json:"sig"`
 }
 
+func NewEvent() *Event {
+	return &Event{Tags: make(Tags)}
+}
+
 func (e Event) IsValid() (bool, string) {
 	bytesID, err := hex.DecodeString(e.ID)
 	if err != nil {
@@ -94,14 +98,14 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 	buffer.WriteString(",\"kind\":")
 	buffer.WriteString(strconv.FormatUint(uint64(e.Kind), 10))
 	// tags
-	buffer.WriteString(",\"tags\":[")
+	buffer.WriteString(",\"tags\":")
 	tags, err := e.Tags.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
 	buffer.Write(tags)
 	// content
-	buffer.WriteString("],\"content\":\"")
+	buffer.WriteString(",\"content\":\"")
 	buffer.WriteString(e.Content)
 	// sig
 	buffer.WriteString("\",\"sig\":\"")
