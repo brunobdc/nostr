@@ -2,7 +2,7 @@ package schnorr
 
 // #include <secp256k1/include/secp256k1.h>
 // #include <secp256k1/include/secp256k1_schnorrsig.h>
-// #cgo LDFLAGS: ${SRCDIR}/secp256k1/.libs/libsecp256k1.a -lgmp
+// #cgo LDFLAGS: ${SRCDIR}/secp256k1/.libs/libsecp256k1.a
 import "C"
 
 func Verify(sig []byte, msg []byte, pk []byte) bool {
