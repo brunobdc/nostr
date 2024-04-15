@@ -14,10 +14,18 @@ import (
 
 func MessageHandler(ctx websocketcontext.WebsocketContext, msg []byte, websocketSubscriptions *subscription.WebsocketSubscriptions) {
 	var msg_arr []json.RawMessage
-	json.Unmarshal(msg, &msg_arr)
+	err := json.Unmarshal(msg, &msg_arr)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	var msg_typ string
-	json.Unmarshal(msg_arr[0], &msg_typ)
+	err = json.Unmarshal(msg_arr[0], &msg_typ)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	ctx.MsgArray = msg_arr[1:]
 	switch msg_typ {
