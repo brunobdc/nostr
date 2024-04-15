@@ -7,6 +7,7 @@ import (
 	"github.com/brunobdc/nostr/relay/src/helpers"
 	"github.com/brunobdc/nostr/relay/src/model"
 	"github.com/brunobdc/nostr/relay/src/repository"
+	"github.com/brunobdc/nostr/relay/src/security"
 	"github.com/brunobdc/nostr/relay/src/subscription"
 	websocketcontext "github.com/brunobdc/nostr/relay/src/websocketContext"
 )
@@ -84,7 +85,18 @@ func handleEvent(ctx websocketcontext.WebsocketContext, eventRepository reposito
 		log.Println(err)
 		return
 	}
-	if valid, msg := event.IsValid(); !valid {
+	valid, msg, err := helpers.ValidateEvent(event, security.SchnorrSignature{})
+	if err != nil {
+		log.Println(err)
+		response, err := helpers.MakeOkResponse(event.ID, false, "error: couldn't validate de event")
+		if err != nil {
+			log.Println(err)
+		} else {
+			ctx.SendMessage(response)
+		}
+		return
+	}
+	if !valid {
 		response, err := helpers.MakeOkResponse(event.ID, false, msg)
 		if err != nil {
 			log.Println(err)

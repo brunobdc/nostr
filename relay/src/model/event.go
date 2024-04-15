@@ -2,11 +2,7 @@ package model
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"strconv"
-
-	"github.com/brunobdc/nostr/relay/src/schnorr"
 )
 
 type EventKind uint16
@@ -29,58 +25,6 @@ type Event struct {
 
 func NewEvent() *Event {
 	return &Event{Tags: make(Tags)}
-}
-
-func (e Event) IsValid() (bool, string) {
-	bytesID, err := hex.DecodeString(e.ID)
-	if err != nil {
-		return false, "error: couldn't decode id hexadecimal"
-	}
-	if len(bytesID) != 32 {
-		return false, "invalid: id bytes size is differente from 32"
-	}
-	bytesPubKey, err := hex.DecodeString(e.PublicKey)
-	if err != nil {
-		return false, "error: couldn't decode pubKey hexadecimal"
-	}
-	if len(bytesPubKey) != 32 {
-		return false, "invalid: pubKey bytes size is differente from 32"
-	}
-	bytesSignature, err := hex.DecodeString(e.Signature)
-	if err != nil {
-		return false, "error: couldn't decode signature hexadecimal"
-	}
-	if len(bytesSignature) != 64 {
-		return false, "invalid: signature bytes size is differente from 64"
-	}
-
-	var buffer bytes.Buffer
-	buffer.WriteString("[0,\"")
-	buffer.WriteString(e.PublicKey)
-	buffer.WriteString("\",")
-	buffer.WriteString(strconv.FormatUint(e.CreatedAt, 10))
-	buffer.WriteString(",")
-	buffer.WriteString(strconv.FormatUint(uint64(e.Kind), 10))
-	buffer.WriteString(",")
-	jsonTags, err := e.Tags.MarshalJSON()
-	if err != nil {
-		return false, "error: couldn't marshal the tags"
-	}
-	buffer.Write(jsonTags)
-	buffer.WriteString(",\"")
-	buffer.WriteString(e.Content)
-	buffer.WriteString("\"]")
-
-	hash := sha256.Sum256(buffer.Bytes())
-	if [32]byte(bytesID) != hash {
-		return false, "invalid: id hash doesn't match the data"
-	}
-
-	valid := schnorr.Verify(bytesSignature, bytesID, bytesPubKey)
-	if !valid {
-		return false, "invalid: signature doesn't match"
-	}
-	return true, ""
 }
 
 func (e *Event) MarshalJSON() ([]byte, error) {
