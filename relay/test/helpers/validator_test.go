@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/brunobdc/nostr/relay/src/helpers"
-	"github.com/brunobdc/nostr/relay/src/model"
+	"github.com/brunobdc/nostr/relay/helpers"
+	"github.com/brunobdc/nostr/relay/model"
 	security_test "github.com/brunobdc/nostr/relay/test/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

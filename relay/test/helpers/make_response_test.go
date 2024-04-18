@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/brunobdc/nostr/relay/src/helpers"
+	"github.com/brunobdc/nostr/relay/helpers"
 	"github.com/stretchr/testify/assert"
 )
 

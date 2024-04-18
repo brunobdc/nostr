@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/brunobdc/nostr/relay/src/model"
+	"github.com/brunobdc/nostr/relay/model"
 	"github.com/stretchr/testify/assert"
 )
 

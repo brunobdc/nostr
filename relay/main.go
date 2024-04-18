@@ -1,16 +1,14 @@
 package main
 
 import (
-	"context"
-
-	"github.com/brunobdc/nostr/relay/src/infra"
-	"github.com/brunobdc/nostr/relay/src/infra/server"
-	"github.com/brunobdc/nostr/relay/src/subscription"
+	"github.com/brunobdc/nostr/relay/relay"
+	"github.com/brunobdc/nostr/relay/relay/repository"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	infra.InitializeDB(context.Background())
-	go subscription.Listen()
-	server.StartNewRelay()
+	repo := repository.NewMongoEventsRepository()
+	handler := relay.NewHandler(repo)
+	go relay.SubscriptionListener()
+	relay.Start(handler)
 }
