@@ -29,7 +29,7 @@ func (repo *MongoEventsRepository) Save(ctx context.Context, event model.Event) 
 }
 
 func (repo *MongoEventsRepository) SaveLatest(ctx context.Context, event model.Event) error {
-	var eventFound model.Event
+	eventFound := model.NewEvent()
 	err := repo.collection.FindOne(
 		context.TODO(),
 		bson.M{
@@ -59,7 +59,7 @@ func (repo *MongoEventsRepository) SaveParemeterizedLatest(ctx context.Context, 
 	if tagValues, ok := event.Tags["d"]; ok {
 		tagValue = tagValues[0]
 	}
-	var eventFound model.Event
+	eventFound := model.NewEvent()
 	err := repo.collection.FindOne(
 		ctx,
 		bson.M{
@@ -67,7 +67,7 @@ func (repo *MongoEventsRepository) SaveParemeterizedLatest(ctx context.Context, 
 			"Kind":      event.Kind,
 			"Tags.d.0":  tagValue,
 		},
-	).Decode(&eventFound)
+	).Decode(eventFound)
 	if err == mongo.ErrNoDocuments {
 		repo.collection.InsertOne(ctx, event)
 		return nil
@@ -85,7 +85,11 @@ func (repo *MongoEventsRepository) SaveParemeterizedLatest(ctx context.Context, 
 	return nil
 }
 
-func (repo *MongoEventsRepository) FindWithFilters(ctx context.Context, filters []*model.Filters) (func(ctx context.Context) (bool, *model.Event), error) {
+func (repo *MongoEventsRepository) FindWithFilters(
+	ctx context.Context,
+	filters []*model.Filters,
+	foreachCb func(event *model.Event) error,
+) error {
 	mongoFilters := []bson.M{}
 	for _, filter := range filters {
 		f := bson.M{}
@@ -115,24 +119,24 @@ func (repo *MongoEventsRepository) FindWithFilters(ctx context.Context, filters 
 		opts = opts.SetLimit(int64(filters[0].Limit))
 	}
 
-	cursor, err := repo.collection.Find(ctx, bson.M{"$or": mongoFilters}, opts)
+	queryFilters := bson.M{}
+	if len(mongoFilters) > 0 {
+		queryFilters["$or"] = mongoFilters
+	}
+	cursor, err := repo.collection.Find(ctx, queryFilters, opts)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		event := model.NewEvent()
+		cursor.Decode(event)
+		err := foreachCb(event)
+		if err != nil {
+			return err
+		}
 	}
 
-	cursosIsClosed := false
-
-	return func(ctx context.Context) (bool, *model.Event) {
-		if cursosIsClosed {
-			return false, nil
-		}
-		cursosIsClosed = cursor.Next(ctx)
-		if cursosIsClosed {
-			cursor.Close(ctx)
-			return false, nil
-		}
-		var event *model.Event
-		cursor.Decode(event)
-		return true, event
-	}, nil
+	return nil
 }

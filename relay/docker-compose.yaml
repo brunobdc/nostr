@@ -1,0 +1,29 @@
+services:
+  caddy:
+    container_name: caddy
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+      - "2080:2080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /app/security/secp256k1
+      - /app/tmp
+      - ./:/app
+    depends_on:
+      - mongodb
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_DATABASE=relay
+    volumes:
+      - ./init-collection.js:/docker-entrypoint-initdb.d/init-collection.js:ro

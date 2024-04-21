@@ -1,0 +1,23 @@
+FROM golang:1.22-bookworm
+
+WORKDIR /app
+
+RUN apt update && apt install autoconf libtool -y
+
+RUN go install github.com/cosmtrek/air@latest
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+RUN cd /tmp && \
+  wget https://github.com/bitcoin-core/secp256k1/archive/refs/tags/v0.4.1.tar.gz && \
+  tar -xzf v0.4.1.tar.gz && \
+  mkdir -p /app/security && \
+  mv secp256k1-0.4.1 /app/security/secp256k1
+
+RUN cd security/secp256k1 && \
+  ./autogen.sh && \
+  ./configure && \
+  make
+
+CMD air

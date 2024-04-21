@@ -43,18 +43,21 @@ func (handler Handler) HandleReq(ctx RelayContext) {
 		}
 	}
 
-	iterate, err := handler.repository.FindWithFilters(ctx.Ctx, filters)
+	err = handler.repository.FindWithFilters(
+		ctx.Ctx,
+		filters,
+		func(event *model.Event) error {
+			response, err := helpers.MakeEventResponse(subscriptionID, *event)
+			if err != nil {
+				return err
+			}
+			ctx.SendMessage(response)
+			return nil
+		},
+	)
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	for ok, event := iterate(ctx.Ctx); ok; {
-		response, err := helpers.MakeEventResponse(subscriptionID, *event)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		ctx.SendMessage(response)
 	}
 
 	response, err := helpers.MakeEoseResponse(subscriptionID)
@@ -67,12 +70,12 @@ func (handler Handler) HandleReq(ctx RelayContext) {
 }
 
 func (handler Handler) HandleEvent(ctx RelayContext) {
-	var event model.Event
-	if err := json.Unmarshal(ctx.MsgArray[1], &event); err != nil {
+	event := model.NewEvent()
+	if err := json.Unmarshal(ctx.MsgArray[1], event); err != nil {
 		log.Println(err)
 		return
 	}
-	valid, msg, err := helpers.ValidateEvent(event, security.SchnorrSignature{})
+	valid, msg, err := helpers.ValidateEvent(*event, security.SchnorrSignature{})
 	if err != nil {
 		log.Println(err)
 		response, err := helpers.MakeOkResponse(event.ID, false, "error: couldn't validate de event")
@@ -94,7 +97,7 @@ func (handler Handler) HandleEvent(ctx RelayContext) {
 	}
 
 	if event.Kind == 1 || (event.Kind >= 1_000 && event.Kind < 10_000) {
-		err := handler.repository.Save(ctx.Ctx, event)
+		err := handler.repository.Save(ctx.Ctx, *event)
 		if err != nil {
 			log.Println(err)
 			response, err := helpers.MakeOkResponse(event.ID, false, "error: couldn't save the event in database")
@@ -106,7 +109,7 @@ func (handler Handler) HandleEvent(ctx RelayContext) {
 			return
 		}
 	} else if event.Kind == 0 || event.Kind == 3 || (event.Kind >= 10_000 && event.Kind < 20_000) {
-		err := handler.repository.SaveLatest(ctx.Ctx, event)
+		err := handler.repository.SaveLatest(ctx.Ctx, *event)
 		if err != nil {
 			log.Println(err)
 			response, err := helpers.MakeOkResponse(event.ID, false, "error: couldn't save the event in database")
@@ -118,7 +121,7 @@ func (handler Handler) HandleEvent(ctx RelayContext) {
 			return
 		}
 	} else if event.Kind >= 30_000 && event.Kind < 40_000 {
-		err := handler.repository.SaveParemeterizedLatest(ctx.Ctx, event)
+		err := handler.repository.SaveParemeterizedLatest(ctx.Ctx, *event)
 		if err != nil {
 			log.Println(err)
 			response, err := helpers.MakeOkResponse(event.ID, false, "error: couldn't save the event in database")
@@ -131,7 +134,7 @@ func (handler Handler) HandleEvent(ctx RelayContext) {
 		}
 	}
 
-	eventChannel <- &event
+	ctx.eventChannel <- *event
 
 	response, err := helpers.MakeOkResponse(event.ID, false, "")
 	if err != nil {

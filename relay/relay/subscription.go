@@ -8,44 +8,29 @@ import (
 	"github.com/fasthttp/websocket"
 )
 
-type RelaySubscriptions struct {
-	ws            *Websocket
-	subscriptions map[string][]*model.Filters
+type RelaySubscriptions map[*Websocket]Subscriptions
+
+type Subscriptions map[string][]*model.Filters
+
+func (subs Subscriptions) AddSubscription(subscriptionID string, filters []*model.Filters) {
+	subs[subscriptionID] = filters
 }
 
-func newRelaySubscriptions(ws *Websocket) *RelaySubscriptions {
-	return &RelaySubscriptions{ws: ws, subscriptions: make(map[string][]*model.Filters)}
+func (subs Subscriptions) CloseSubscription(subscriptionID string) {
+	delete(subs, subscriptionID)
 }
 
-func (rsSub *RelaySubscriptions) AddSubscription(subscriptionID string, filters []*model.Filters) {
-	rsSub.subscriptions[subscriptionID] = filters
-}
-
-func (rsSub *RelaySubscriptions) CloseSubscription(subscriptionID string) {
-	delete(rsSub.subscriptions, subscriptionID)
-}
-
-func (rsSub *RelaySubscriptions) SendResponse(response []byte) {
-	rsSub.ws.WriteMessage(websocket.TextMessage, response)
-}
-
-func AddWebsocket(ws *Websocket) *RelaySubscriptions {
-	rsSub := newRelaySubscriptions(ws)
-	subscriptions = append(subscriptions, rsSub)
-	return rsSub
-}
-
-func SubscriptionListener() {
+func SubscriptionListener(relaySubs RelaySubscriptions, eventChannel chan model.Event) {
 	for event := range eventChannel {
-		for _, rsSub := range subscriptions {
-			for subId, filters := range rsSub.subscriptions {
+		for ws, subscriptions := range relaySubs {
+			for subId, filters := range subscriptions {
 				for _, filter := range filters {
-					if filter.Match(*event) {
-						response, err := helpers.MakeEventResponse(subId, *event)
+					if filter.Match(event) {
+						response, err := helpers.MakeEventResponse(subId, event)
 						if err != nil {
 							log.Println(err)
 						} else {
-							rsSub.SendResponse(response)
+							ws.WriteMessage(websocket.TextMessage, response)
 						}
 						break
 					}

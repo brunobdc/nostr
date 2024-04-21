@@ -38,7 +38,7 @@ func (signature SchnorrSignature) VerifySignature(sig [64]byte, msg [32]byte, pu
 		return false, errors.New("unexpected error in context randomize")
 	}
 
-	var publicKey *C.secp256k1_xonly_pubkey
+	publicKey := new(C.secp256k1_xonly_pubkey)
 	result, err := C.secp256k1_xonly_pubkey_parse(ctx, publicKey, (*C.uchar)(&pubKey[0]))
 	if result == 0 {
 		return false, errors.New("couldn't parse the public key")
