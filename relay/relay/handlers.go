@@ -24,7 +24,7 @@ func (handler Handler) HandleClose(ctx RelayContext) {
 		log.Println(err)
 		return
 	}
-	ctx.Subscription.CloseSubscription(subscriptionID)
+	ctx.CloseSubscription(subscriptionID)
 }
 
 func (handler Handler) HandleReq(ctx RelayContext) {
@@ -66,7 +66,7 @@ func (handler Handler) HandleReq(ctx RelayContext) {
 	}
 	ctx.SendMessage(response)
 
-	ctx.Subscription.AddSubscription(subscriptionID, filters)
+	ctx.AddSubscription(subscriptionID, filters)
 }
 
 func (handler Handler) HandleEvent(ctx RelayContext) {

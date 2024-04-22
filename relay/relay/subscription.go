@@ -8,7 +8,7 @@ import (
 	"github.com/fasthttp/websocket"
 )
 
-type RelaySubscriptions map[*Websocket]Subscriptions
+type RelaySubscriptions map[*Websocket]struct{}
 
 type Subscriptions map[string][]*model.Filters
 
@@ -22,8 +22,8 @@ func (subs Subscriptions) CloseSubscription(subscriptionID string) {
 
 func SubscriptionListener(relaySubs RelaySubscriptions, eventChannel chan model.Event) {
 	for event := range eventChannel {
-		for ws, subscriptions := range relaySubs {
-			for subId, filters := range subscriptions {
+		for ws := range relaySubs {
+			for subId, filters := range ws.subscriptions {
 				for _, filter := range filters {
 					if filter.Match(event) {
 						response, err := helpers.MakeEventResponse(subId, event)
