@@ -136,7 +136,7 @@ func (handler Handler) HandleEvent(ctx RelayContext) {
 
 	ctx.eventChannel <- *event
 
-	response, err := helpers.MakeOkResponse(event.ID, false, "")
+	response, err := helpers.MakeOkResponse(event.ID, true, "")
 	if err != nil {
 		log.Println(err)
 	} else {
