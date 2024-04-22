@@ -32,11 +32,6 @@ func UpgradeToWebsocket(w http.ResponseWriter, r *http.Request) (*Websocket, err
 		return nil, err
 	}
 
-	conn.SetReadDeadline(time.Now().Add(time.Minute))
-	conn.SetPongHandler(func(string) error {
-		return conn.SetReadDeadline(time.Now().Add(time.Minute))
-	})
-
 	return &Websocket{conn: conn, subscriptions: make(Subscriptions), ticker: time.NewTicker(30 * time.Second)}, nil
 }
 
@@ -106,6 +101,11 @@ func (ws *Websocket) readMessagesLoop(relaySubs RelaySubscriptions, handler Mess
 }
 
 func (ws *Websocket) handlePingPong() {
+	ws.conn.SetReadDeadline(time.Now().Add(time.Minute))
+	ws.conn.SetPongHandler(func(string) error {
+		return ws.conn.SetReadDeadline(time.Now().Add(time.Minute))
+	})
+
 	defer func() {
 		ws.ticker.Stop()
 		ws.conn.Close()
