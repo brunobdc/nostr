@@ -2,9 +2,8 @@ package repository
 
 import (
 	"context"
-	"log"
-	"os"
 
+	"github.com/brunobdc/nostr/relay/infra/db"
 	"github.com/brunobdc/nostr/relay/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,12 +14,10 @@ type MongoEventsRepository struct {
 	collection *mongo.Collection
 }
 
-func NewMongoEventsRepository() *MongoEventsRepository {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
-	if err != nil {
-		log.Fatal(err)
+func MakeMongoEventsRepository() *MongoEventsRepository {
+	return &MongoEventsRepository{
+		collection: db.MongoRelayDB().Collection("Events"),
 	}
-	return &MongoEventsRepository{collection: client.Database("relay").Collection("Events")}
 }
 
 func (repo *MongoEventsRepository) Save(ctx context.Context, event model.Event) error {
